@@ -54,6 +54,8 @@ def get_parameters_for_Scotty(
 
         - ``"DBS_SWIP_MAST-U"``
             - Doppler reflectometry (Peng Shi)
+        - ``"DBS_SWIP_HL-3"``
+            - Doppler reflectometry (Yu Zhou)
 
         - ``"DBS_UCLA_MAST-U"``
         - ``"CPS_UCLA_MAST-U"``
@@ -298,7 +300,24 @@ def user_settings(diagnostic, user, shot):
     if user == "Freia":
         # Not yet properly implemented
         efitpp_path = None
-
+    
+    elif user in ["zhouyu_laptop", "zhouyu_desktop"]:
+        if user == "zhouyu_laptop":
+            prefix = pathlib.Path("E:\\")
+        elif user == "zhouyu_desktop":
+            prefix = pathlib.Path("/home/workdir/")
+        if diagnostic in ["DBS_SWIP_HL-3"]:
+            if shot > 5000:
+                # MAST-U EFIT runs. List of available shots not updated.
+                efitpp_path = (
+                    prefix
+                    / f"Data/Equilibrium/HL-3/"
+                )
+                ne_path = prefix / "Data/neprofile/HL-3/"
+            elif shot > 30471:
+                # Not yet properly implemented
+                efitpp_path = None
+                
     elif user in ["Valerian_desktop", "Valerian_laptop"]:
         if user == "Valerian_desktop":
             prefix = pathlib.Path("D:\\Dropbox\\")
@@ -407,6 +426,26 @@ def parameters_DBS_SWIP_MAST_U(launch_freq_GHz: float) -> dict:
         "vacuum_propagation_flag": True,
         "vacuumLaunch_flag": True,
     }
+    
+    
+def parameters_DBS_SWIP_HL_3(launch_freq_GHz: float) -> dict:
+    print("Warning: launch_position is an estimate")
+    launch_beam = beam_settings(
+        "DBS_SWIP_HL-3", launch_freq_GHz, method="estimate_fix_w0"
+    )
+    return {
+        # Default settings
+        # q_R, q_zeta, q_Z. q_zeta = 0 at launch, by definition
+        "launch_position": np.array([2.75, 0, -0.15]),
+        "launch_beam_width": launch_beam.width,
+        "launch_beam_curvature": launch_beam.curvature,
+        # I'm checking what this actually is from Peng. Currently using the
+        # MAST UCLA DBS as a guide
+        "Psi_BC_flag": "continuous",
+        "figure_flag": True,
+        "vacuum_propagation_flag": True,
+        "vacuumLaunch_flag": True,
+    }
 
 
 def parameters_DBS_UCLA_DIII_D_240(launch_freq_GHz: float) -> dict:
@@ -461,6 +500,7 @@ DEFAULT_DIAGNOSTIC_PARAMETERS: Dict[str, Callable[[float], dict]] = {
     "DBS_NSTX_MAST": parameters_DBS_NSTX_MAST,
     "DBS_UCLA_MAST-U": parameters_DBS_UCLA_MAST_U,
     "DBS_SWIP_MAST-U": parameters_DBS_SWIP_MAST_U,
+    "DBS_SWIP_HL-3": parameters_DBS_SWIP_HL_3,
     "DBS_UCLA_DIII-D_240": parameters_DBS_UCLA_DIII_D_240,
     "DBS_synthetic": parameters_DBS_synthetic,
 }
