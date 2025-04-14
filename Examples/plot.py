@@ -18,14 +18,15 @@ from scotty.plotting import (
     plot_toroidal_beam_path
     )
 
-path = 'D:\\Dropbox\\VHChen2022\\Code - Testing Scotty\\Various cases\\DIII-D - DBS240\\Output\\'
-dt = datatree.open_datatree(path+"scotty_output.h5", engine="h5netcdf")
+path = './'
+# dt = datatree.open_datatree(path+"scotty_output.h5", engine="h5netcdf")
+dt = datatree.open_datatree(path+"scotty_output_t4.00.h5", engine="h5netcdf")
 
 
 # plot_dispersion_relation(dt['analysis'])
 
-plot_poloidal_beam_path(dt,zoom=True)
+plot_poloidal_beam_path(dt,'test',zoom=True)
 
-# plot_toroidal_beam_path(dt)
+plot_toroidal_beam_path(dt,'test2')
 
-# dt.close()
+dt.close()

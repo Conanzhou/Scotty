@@ -33,7 +33,7 @@ plt.xlim([0, 1.5])
 #density_fit_array[density_fit_array<0] = 0
 output_length = len(radialcoord_array)
 
-with open('ne.dat','w') as ne_data_file:
+with open('','w') as ne_data_file:
     ne_data_file.write(f"{int(output_length)}\n") 
     for ii in range(0, output_length):
         ne_data_file.write(f'{radialcoord_array[ii]:.8e} {density_array[ii]:.8e} \n')        

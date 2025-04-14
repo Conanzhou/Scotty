@@ -343,13 +343,50 @@ def beam_me_up(
     if density_fit_parameters is None and (
         density_fit_method in [None, "smoothing-spline-file"]
     ):
+        # Try to load density data from different possible sources
         ne_filename = ne_data_path / f"ne{input_filename_suffix}.dat"
-        density_fit_parameters = [ne_filename, interp_order, interp_smoothing]
 
-        # FIXME: Read data so it can be saved later
-        ne_data = np.fromfile(ne_filename, dtype=float, sep="   ")
-        ne_data_density_array = ne_data[2::2]
-        ne_data_radialcoord_array = ne_data[1::2]
+        # First try traditional .dat format
+        if ne_filename.exists():
+            print(f"Using density data from: {ne_filename}")
+            density_fit_parameters = [ne_filename, interp_order, interp_smoothing]
+            # Read data so it can be saved later
+            ne_data = np.fromfile(ne_filename, dtype=float, sep="   ")
+            ne_data_density_array = ne_data[2::2]
+            ne_data_radialcoord_array = ne_data[1::2]
+
+        # If .dat file doesn't exist, try npz format
+        else:
+            npz_filename = ne_data_path / f"kin_data_{shot:05d}.npz"
+            if npz_filename.exists() and shot is not None and equil_time is not None:
+                print(f"Using density data from: {npz_filename}")
+                ne_data = np.load(npz_filename, allow_pickle=True)
+                ne_tvec = ne_data['ne'].item()['tvec']
+                t_idx = find_nearest(ne_tvec, equil_time)
+                print(f"Using time slice at t = {ne_tvec[t_idx]:.3f}s (requested: {equil_time:.3f}s)")
+                ne_data_density_array = ne_data['ne'].item()['data'][t_idx,:] / 10**19
+                # Square the rho values to get psi_norm
+                ne_data_radialcoord_array = ne_data['ne'].item()['rho']
+
+                # Create the .dat file for TORBEAM format compatibility
+                # ne_data_file = open(ne_filename,'w')  
+                # ne_data_file.write(str(int(output_length)) + '\n') 
+                # for ii in range(0, output_length):
+                #     ne_data_file.write('{:.8e} {:.8e} \n'.format(radialcoord_interp_array[ii],density_fit_array[ii]))        
+                # ne_data_file.close()
+                with open(ne_filename, 'w') as ne_file:
+                    ne_file.write(str(int(len(ne_data_radialcoord_array))) + '\n') 
+                    for i in range(len(ne_data_radialcoord_array)):
+                        ne_file.write(f"{ne_data_radialcoord_array[i]:.8e} {ne_data_density_array[i]:.8e}\n")
+                print(f"Electron density profile converted and saved to: {ne_filename}")
+                
+                # Update density_fit_parameters to point to the newly created file
+                density_fit_parameters = [ne_filename, interp_order, interp_smoothing]
+            else:
+                # No valid density data found
+                raise FileNotFoundError(f"No density data found at {ne_filename} or {npz_filename}. " +
+                                       "Please provide a valid density profile file or specify shot and equil_time.")
+        
     else:
         ne_filename = None
 
@@ -999,6 +1036,13 @@ def create_magnetic_geometry(
         filename = magnetic_data_path / f"{shot}_equilibrium_data.npz"
         return EFITField.from_MAST_U_saved(
             filename, equil_time, delta_R, delta_Z, interp_order, interp_smoothing
+        )
+    
+    if find_B_method == "mdsplus":
+        print(f"Using HL-3 shot {shot} from MDSplus")
+
+        return EFITField.from_HL3_MDSplus(
+            shot, equil_time, interp_order, interp_smoothing
         )
 
     raise ValueError(f"Invalid find_B_method '{find_B_method}'")

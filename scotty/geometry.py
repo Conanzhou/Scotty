@@ -588,3 +588,109 @@ class EFITField(InterpolatedField):
                 interp_order=interp_order,
                 interp_smoothing=interp_smoothing,
             )
+
+    @classmethod
+    def from_HL3_MDSplus(
+        cls,
+        shot: float,
+        equil_time: float,
+        # delta_R: Optional[float],
+        # delta_Z: Optional[float],
+        interp_order: int,
+        interp_smoothing: int,
+        
+        mds_server: str = "192.168.20.10",
+        diag: str = "EFIT_HL3",
+    ):
+        """Get EFIT data from HL-3 MDSplus database
+        
+        Parameters
+        ----------
+        equil_time : float
+            Time point for equilibrium data (seconds)
+        delta_R : float, optional
+            Finite difference step size for R derivatives
+        delta_Z : float, optional
+            Finite difference step size for Z derivatives
+        interp_order : int
+            Order of interpolation spline
+        interp_smoothing : int
+            Smoothing factor for interpolation
+        shot : int, optional
+            Shot number
+        mds_server : str
+            MDSplus server address
+        diag : str
+            EFIT diagnostic name
+            
+        Returns
+        -------
+        EFITField
+            Interpolated magnetic field object
+        """
+        try:
+            import MDSplus as mds
+        except ImportError:
+            raise ImportError("MDSplus package is required for HL3_MDSplus")
+            
+        # 连接到MDSplus服务器
+        try:
+            connection = mds.Connection(mds_server)
+            connection.openTree(diag, shot)
+        except Exception as e:
+            raise ConnectionError(f"Failed to connect to MDSplus server: {e}")
+            
+        # 从map_equ.py中借鉴的HL-3网格定义
+        # HL-3的R和Z网格（129x129）
+        R_grid = np.linspace(1.05, 1.05 + 1.46, 129)  # R网格 [m]
+        Z_grid = np.linspace(-3.02/2, 3.02/2, 129)    # Z网格 [m]
+
+        delta_R = R_grid[2] - R_grid[1]  # R网格间隔
+        delta_Z = Z_grid[2] - Z_grid[1]  # Z网格间隔
+        
+        # 读取EFIT时间序列
+        try:
+            # 获取时间序列
+            t_eq = np.atleast_1d(connection.get('\\EFIT_HL3::TOP.TIME').data())
+            t_idx = find_nearest(t_eq, equil_time)
+            print(f"HL-3 EFIT time: {t_eq[t_idx]:.4f} s")
+            
+            # 获取规范化的极向磁通网格数据
+            psi_2D = connection.get('\\EFIT_HL3::TOP.EFIT_PSIRZ').data().T[:, :, t_idx]
+            
+            # 获取磁轴和分界面处的极向磁通值
+            psi_unnorm_axis = connection.get('\\EFIT_HL3::TOP.EFIT_SIMAG').data()[t_idx]
+            psi_unnorm_boundary = connection.get('\\EFIT_HL3::TOP.EFIT_SIBRY').data()[t_idx]
+
+            psi_norm_2D = (psi_2D-psi_unnorm_axis) / (psi_unnorm_boundary-psi_unnorm_axis)
+            
+            # 根据HL-3的MDSplus结构获取rBphi数据
+            # 首先获取规范化的极向磁通一维数组
+            # psi_norm_1D = np.linspace(0, 1, 129)
+            
+            # 获取rBphi数据
+            fpol_data = connection.get('\\EFIT_HL3::TOP.EFIT_FPOL').data().T[:, t_idx]
+            
+            # rBphi需要乘以2*pi/mu_0，参考map_equ.py
+            from scipy.constants import mu_0
+            rBphi = fpol_data * mu_0
+
+            psi_norm_1D = np.linspace(0, 1.0, len(rBphi))
+           
+        except Exception as e:
+            raise ValueError(f"Error retrieving HL-3 EFIT data: {e}")
+            
+        # 返回EFITField对象
+        return EFITField(
+            R_grid=R_grid,
+            Z_grid=Z_grid,
+            rBphi=rBphi,
+            psi_norm_2D=psi_norm_2D,
+            psi_norm_1D=psi_norm_1D,
+            psi_unnorm_axis=psi_unnorm_axis * 2 * np.pi,  # 转换单位为Weber/radian
+            psi_unnorm_boundary=psi_unnorm_boundary * 2 * np.pi,  # 转换单位为Weber/radian
+            delta_R=delta_R,
+            delta_Z=delta_Z,
+            interp_order=interp_order,
+            interp_smoothing=interp_smoothing,
+        )

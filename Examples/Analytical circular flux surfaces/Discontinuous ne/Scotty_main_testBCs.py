@@ -38,7 +38,7 @@ kwargs_dict = {
     "delta_Z": 1e-5,
     "find_B_method": "analytical",
     "Psi_BC_flag": 'discontinuous',
-    "figure_flag": False,
+    "figure_flag": True,
     "vacuum_propagation_flag": True,
     "vacuumLaunch_flag": True,
     "poloidal_flux_enter": 1.0,

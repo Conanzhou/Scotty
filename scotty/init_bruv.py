@@ -146,7 +146,7 @@ def get_parameters_for_Scotty(
     if find_B_method == "torbeam":
         parameters["ne_data_path"] = ne_path
         parameters["magnetic_data_path"] = topfile_path
-    elif find_B_method in ["EFITpp", "UDA_saved", "test"]:
+    elif find_B_method in ["EFITpp", "UDA_saved", "test", "mdsplus"]:
         parameters["ne_data_path"] = UDA_saved_path
 
         density_fit = ne_settings(diagnostic, shot, equil_time, find_ne_method)
@@ -305,18 +305,21 @@ def user_settings(diagnostic, user, shot):
         if user == "zhouyu_laptop":
             prefix = pathlib.Path("E:\\")
         elif user == "zhouyu_desktop":
-            prefix = pathlib.Path("/home/workdir/")
+            # prefix = pathlib.Path("/home/workdir/")
+            prefix = pathlib.Path("/home/darkest/WorkDir/MATLAB/RayTracing_recode2/HL-2M/")
         if diagnostic in ["DBS_SWIP_HL-3"]:
-            if shot > 5000:
-                # MAST-U EFIT runs. List of available shots not updated.
-                efitpp_path = (
-                    prefix
-                    / f"Data/Equilibrium/HL-3/"
-                )
-                ne_path = prefix / "Data/neprofile/HL-3/"
-            elif shot > 30471:
-                # Not yet properly implemented
-                efitpp_path = None
+            efitpp_path = prefix / f"gfile/"
+            ne_path = prefix / f"neprofile/"
+            # if shot > 5000:
+            #     # MAST-U EFIT runs. List of available shots not updated.
+            #     efitpp_path = (
+            #         prefix
+            #         / f"Data/Equilibrium/HL-3/"
+            #     )
+            #     ne_path = prefix / "Data/neprofile/HL-3/"
+            # elif shot > 30471:
+            #     # Not yet properly implemented
+            #     efitpp_path = None
                 
     elif user in ["Valerian_desktop", "Valerian_laptop"]:
         if user == "Valerian_desktop":
@@ -431,7 +434,8 @@ def parameters_DBS_SWIP_MAST_U(launch_freq_GHz: float) -> dict:
 def parameters_DBS_SWIP_HL_3(launch_freq_GHz: float) -> dict:
     print("Warning: launch_position is an estimate")
     launch_beam = beam_settings(
-        "DBS_SWIP_HL-3", launch_freq_GHz, method="estimate_fix_w0"
+        # "DBS_SWIP_HL-3", launch_freq_GHz, method="estimate_fix_w0"
+        "DBS_SWIP_HL-3", launch_freq_GHz, method="estimate_var_w0"
     )
     return {
         # Default settings
@@ -701,6 +705,16 @@ def launch_beam_DBS_SWIP_MAST_U_estimate_var_w0(launch_freq_GHz):
     wavenumber_K0 = freq_GHz_to_wavenumber(launch_freq_GHz)
     return propagate_circular_beam(distance, wavenumber_K0, w0, launch_freq_GHz)
 
+def launch_beam_DBS_SWIP_HL_3_estimate_var_w0(launch_freq_GHz):
+    if launch_freq_GHz <= 50.0:  # Q band
+        w0 = np.sqrt(launch_freq_GHz / 40) * 0.10
+    else:  # V band
+        w0 = np.sqrt(launch_freq_GHz / 60) * 0.06
+
+    # window to steering mirror, negative because the mirror is behind the window
+    distance = -0.277
+    wavenumber_K0 = freq_GHz_to_wavenumber(launch_freq_GHz)
+    return propagate_circular_beam(distance, wavenumber_K0, w0, launch_freq_GHz)
 
 def launch_beam_DBS_SWIP_MAST_U_estimate_fix_w0(launch_freq_GHz):
     if launch_freq_GHz <= 50.0:  # Q band
@@ -726,6 +740,10 @@ LAUNCH_BEAM_METHODS: Dict[str, Dict[str, Callable[[float], LaunchBeamParameters]
         "estimate_var_w0": launch_beam_DBS_SWIP_MAST_U_estimate_var_w0,
         "estimate_fix_w0": launch_beam_DBS_SWIP_MAST_U_estimate_fix_w0,
     },
+    "DBS_SWIP_HL-3": {
+        "estimate_var_w0": launch_beam_DBS_SWIP_HL_3_estimate_var_w0,
+        "estimate_fix_w0": launch_beam_DBS_SWIP_MAST_U_estimate_fix_w0,
+    }, 
 }
 """Functions that return launch beam parameters for the corresponding diagnostic"""
 
