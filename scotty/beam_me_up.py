@@ -1042,7 +1042,7 @@ def create_magnetic_geometry(
         print(f"Using HL-3 shot {shot} from MDSplus")
 
         return EFITField.from_HL3_MDSplus(
-            shot, equil_time, interp_order, interp_smoothing
+            shot, equil_time, delta_R, delta_Z, interp_order, interp_smoothing
         )
 
     raise ValueError(f"Invalid find_B_method '{find_B_method}'")

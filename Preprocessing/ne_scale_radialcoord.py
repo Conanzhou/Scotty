@@ -38,10 +38,12 @@ def linear_times_tanh_constrained(polflux,C_1,C_3,C_4):
 #torbeam_directory_path = 'C:\\Users\\chenv\\Dropbox\\VHChen2018\\Data\\Input_Files_29Apr2019\\'
 # input_files_path ='D:\\Dropbox\\VHChen2020\\Data\\Input_Files_29Apr2019\\'
 # torbeam_directory_path = 'D:\\Dropbox\\VHChen2020\\Data\\Input_Files_29Apr2019\\'
-input_files_path ='C:\\Dropbox\\VHChen2023\\Data - Equilibrium\\'
-torbeam_directory_path = 'C:\\Dropbox\\VHChen2023\\Data - Equilibrium\\'
+input_files_path ='/home/darkest/WorkDir/GitHub/quickfit/HL3/OUTPUT/'
+torbeam_directory_path = '/home/darkest/WorkDir/GitHub/quickfit/HL3/OUTPUT/'
 
-suffix = '_188842_2500ms'
+shot = 12296
+equil_time = 2.1
+suffix = f'_{shot:05d}_{equil_time*1000:.0f}ms'
 ne_filename = input_files_path + 'ne' +suffix+ '.dat'
 
 ne_data = np.fromfile(ne_filename,dtype=float, sep='   ') # electron density as a function of poloidal flux label
@@ -55,7 +57,8 @@ ne_data_flux_array = ne_data_radialcoord_array**2
 scaling = 0.82
 
 # Loading from DIII-D
-ne_data_density_array = ne_data_density_array / 10**19
+# ne_data_density_array = ne_data_density_array / 10**19
+ne_data_density_array = ne_data_density_array * 1.0
 ##
 
 

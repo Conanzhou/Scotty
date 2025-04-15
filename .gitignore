@@ -228,7 +228,11 @@ cython_debug/
 *.hdf5
 *.dat
 *topfile*
+*.h5
 
 # Generated version file
 scotty/_version.py
 *.json
+
+# PNG
+*.png

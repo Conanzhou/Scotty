@@ -707,14 +707,15 @@ def launch_beam_DBS_SWIP_MAST_U_estimate_var_w0(launch_freq_GHz):
 
 def launch_beam_DBS_SWIP_HL_3_estimate_var_w0(launch_freq_GHz):
     if launch_freq_GHz <= 50.0:  # Q band
-        w0 = np.sqrt(launch_freq_GHz / 40) * 0.10
+        w0 = np.sqrt(launch_freq_GHz / 40) * 0.05
     else:  # V band
-        w0 = np.sqrt(launch_freq_GHz / 60) * 0.06
+        w0 = np.sqrt(launch_freq_GHz / 60) * 0.03
 
     # window to steering mirror, negative because the mirror is behind the window
-    distance = -0.277
-    wavenumber_K0 = freq_GHz_to_wavenumber(launch_freq_GHz)
-    return propagate_circular_beam(distance, wavenumber_K0, w0, launch_freq_GHz)
+    distance = -0.4
+    # wavenumber_K0 = freq_GHz_to_wavenumber(launch_freq_GHz)
+    # return propagate_circular_beam(distance, wavenumber_K0, w0, launch_freq_GHz)
+    return propagate_circular_beam(w0, 0, distance, launch_freq_GHz)
 
 def launch_beam_DBS_SWIP_MAST_U_estimate_fix_w0(launch_freq_GHz):
     if launch_freq_GHz <= 50.0:  # Q band

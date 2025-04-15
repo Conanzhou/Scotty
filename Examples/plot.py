@@ -19,13 +19,13 @@ from scotty.plotting import (
     )
 
 path = './'
-# dt = datatree.open_datatree(path+"scotty_output.h5", engine="h5netcdf")
-dt = datatree.open_datatree(path+"scotty_output_t4.00.h5", engine="h5netcdf")
+dt = datatree.open_datatree(path+"scotty_output.h5", engine="h5netcdf")
+# dt = datatree.open_datatree(path+"scotty_output_t4.00.h5", engine="h5netcdf")
 
 
 # plot_dispersion_relation(dt['analysis'])
 
-plot_poloidal_beam_path(dt,'test',zoom=True)
+plot_poloidal_beam_path(dt,'test')
 
 plot_toroidal_beam_path(dt,'test2')
 

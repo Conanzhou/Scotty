@@ -449,14 +449,17 @@ class EFITField(InterpolatedField):
         )
 
     def B_R(self, q_R: ArrayLike, q_Z: ArrayLike) -> FloatArray:
+        q_R, q_Z = np.asfarray(q_R), np.asfarray(q_Z)
         dpolflux_dZ = self.d_poloidal_flux_dZ(q_R, q_Z, self.delta_Z)
         return -dpolflux_dZ * self.poloidal_flux_gradient / q_R
 
     def B_T(self, q_R: ArrayLike, q_Z: ArrayLike) -> FloatArray:
+        q_R, q_Z = np.asfarray(q_R), np.asfarray(q_Z)
         polflux = self._interp_poloidal_flux(q_R, q_Z)
         return self._interp_rBphi(polflux) / q_R
 
     def B_Z(self, q_R: ArrayLike, q_Z: ArrayLike) -> FloatArray:
+        q_R, q_Z = np.asfarray(q_R), np.asfarray(q_Z)
         dpolflux_dR = self.d_poloidal_flux_dR(q_R, q_Z, self.delta_R)
         return dpolflux_dR * self.poloidal_flux_gradient / q_R
 
@@ -594,8 +597,8 @@ class EFITField(InterpolatedField):
         cls,
         shot: float,
         equil_time: float,
-        # delta_R: Optional[float],
-        # delta_Z: Optional[float],
+        delta_R: Optional[float],
+        delta_Z: Optional[float],
         interp_order: int,
         interp_smoothing: int,
         
@@ -645,8 +648,8 @@ class EFITField(InterpolatedField):
         R_grid = np.linspace(1.05, 1.05 + 1.46, 129)  # R网格 [m]
         Z_grid = np.linspace(-3.02/2, 3.02/2, 129)    # Z网格 [m]
 
-        delta_R = R_grid[2] - R_grid[1]  # R网格间隔
-        delta_Z = Z_grid[2] - Z_grid[1]  # Z网格间隔
+        # delta_R = R_grid[2] - R_grid[1]  # R网格间隔
+        # delta_Z = Z_grid[2] - Z_grid[1]  # Z网格间隔
         
         # 读取EFIT时间序列
         try:
@@ -656,7 +659,7 @@ class EFITField(InterpolatedField):
             print(f"HL-3 EFIT time: {t_eq[t_idx]:.4f} s")
             
             # 获取规范化的极向磁通网格数据
-            psi_2D = connection.get('\\EFIT_HL3::TOP.EFIT_PSIRZ').data().T[:, :, t_idx]
+            psi_2D = connection.get('\\EFIT_HL3::TOP.EFIT_PSIRZ').data()[t_idx, :, :].T
             
             # 获取磁轴和分界面处的极向磁通值
             psi_unnorm_axis = connection.get('\\EFIT_HL3::TOP.EFIT_SIMAG').data()[t_idx]
@@ -672,8 +675,9 @@ class EFITField(InterpolatedField):
             fpol_data = connection.get('\\EFIT_HL3::TOP.EFIT_FPOL').data().T[:, t_idx]
             
             # rBphi需要乘以2*pi/mu_0，参考map_equ.py
-            from scipy.constants import mu_0
-            rBphi = fpol_data * mu_0
+            # from scipy.constants import mu_0
+            # rBphi = fpol_data * mu_0
+            rBphi = fpol_data
 
             psi_norm_1D = np.linspace(0, 1.0, len(rBphi))
            
